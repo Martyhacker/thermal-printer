@@ -1,0 +1,53 @@
+# Thermal Printer Template Editor - Technical Guide
+
+## Project Structure
+
+- `lib/models.dart`: Defines the core data structures.
+  - `TemplateModel`: Root model containing a list of widgets and paper size.
+  - `BaseWidgetModel`, `TextWidgetModel`, `ImageWidgetModel`, `BarcodeWidgetModel`: UI element definitions.
+- `lib/template_provider.dart`: Global state management for templates and user settings (like Dark Mode). Uses `SharedPreferences` for persistence.
+- `lib/printer_service.dart`: The core logic for printer connectivity and command generation.
+- `lib/main.dart`: Entry point. Switches between Material UI (Mobile) and Fluent UI (Desktop).
+- `lib/desktop/`: Dedicated directory for Windows/Linux specific UI components using the `fluent_ui` package.
+
+## Printer Connectivity Logic
+
+The app supports two main types of connections:
+
+1. **Bluetooth (Android)**:
+   - Uses `flutter_bluetooth_serial_plus`.
+   - Discovers bonded devices and establishes a raw serial connection using the device address.
+2. **Serial/USB (Desktop)**:
+   - Uses `flutter_libserialport`.
+   - Accesses standard serial ports (e.g., `/dev/ttyUSB0` on Linux or `COM3` on Windows).
+   - **Important**: On Linux, you may need to grant permissions to the port: `sudo chmod 666 /dev/ttyX`.
+
+## Printing Flow (Rasterization)
+
+Since most thermal printers are "dumb" and only support basic text, we use a "Canvas-to-Raster" approach for complex layouts:
+
+1. **Capture**: The `screenshot` package takes a snapshot of the template canvas as a PNG/JPG byte array.
+2. **Resize**: `PrinterService` resizes the image to fit the target paper width (384px for 58mm, 576px for 80mm).
+3. **Monochrome Conversion**: The image is converted to grayscale and then to a 1-bit (black and white) raster bitmask.
+4. **Commands**: The bitmask is wrapped in **ESC/POS** commands:
+   - `0x1B 0x40`: Initialize printer.
+   - `0x1D 0x76 0x30 0x00`: Print raster bit image command.
+   - `0x1D 0x56 0x00`: Feed and cut paper.
+
+## Troubleshooting
+
+## Troubleshooting & Logging
+
+- **Port Discovery Logs**: The app now outputs detailed metadata for every serial port found. Check your terminal output for:
+  - `Scanning available serial ports: [...]`
+  - `Found Port: /dev/ttyUSB0`
+  - `Description: ..., Manufacturer: ..., Product Name: ...`
+- **Permissions**: If a port is listed but cannot be opened, run: `sudo chmod 666 /dev/ttyX` where `X` is your port name.
+- **Baud Rate**: If the printer prints garbled text or "random characters", switch the Baud Rate in the Preview page (9600 and 115200 are the most common values).
+- **Semantics/Render Errors**: If you see `semantics.parentDataDirty` errors, they should now be suppressed by the newly added `RepaintBoundary` isolators in the desktop layout.
+
+## Folders & Data Models
+
+- `lib/models.dart`: Core widget and template logic.
+- `lib/printer_service.dart`: Serial/Bluetooth driver logic.
+- `guide.txt`: This file.
