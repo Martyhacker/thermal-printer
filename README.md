@@ -1,10 +1,15 @@
 # thermal_printer
 
-A new Flutter project.
+Developed with chinese brand L36/L361 Printer [USB/Bluetooth]
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Using this project you can create templates for this type of printer and print it.
+Available widgets:
+- Image
+- Barcode
+- QR Code
+- Text
 
 A few resources to get you started if this is your first Flutter project:
 
